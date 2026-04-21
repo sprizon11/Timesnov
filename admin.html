@@ -166,6 +166,9 @@ th{font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--te
 }
 .icon-link svg{width:19px;height:19px;fill:currentColor;filter:drop-shadow(0 3px 8px rgba(109,101,255,.35))}
 .icon-link:hover{color:#fff;transform:translateY(-3px) scale(1.15);filter:drop-shadow(0 8px 15px rgba(109,101,255,.45))}
+.delete-link{color:#ff6f91}
+.delete-link:hover{color:#ff3f70}
+.row-check{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
 
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-4px)}}
@@ -239,11 +242,12 @@ th{font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--te
         <input class="ctrl" type="search" id="searchInput" placeholder="Search name, email, requirement...">
         <input class="ctrl date" type="date" id="fromDate" onkeydown="return false" onpaste="return false">
         <input class="ctrl date" type="date" id="toDate" onkeydown="return false" onpaste="return false">
+        <button class="btn" id="deleteSelectedBtn">Delete Selected</button>
         <button class="btn" id="filterExportBtn">Export Excel</button>
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>#</th><th>Client</th><th>Requirement</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <thead><tr><th><input type="checkbox" id="selectAllRows" class="row-check" aria-label="Select all rows"></th><th>#</th><th>Client</th><th>Requirement</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
           <tbody id="leadRows"></tbody>
         </table>
       </div>
@@ -270,8 +274,11 @@ const fromDate = document.getElementById('fromDate');
 const toDate = document.getElementById('toDate');
 const statusChips = document.getElementById('statusChips');
 const filterExportBtn = document.getElementById('filterExportBtn');
+const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+const selectAllRows = document.getElementById('selectAllRows');
 let loginBusy = false;
 let allLeads = [];
+const selectedLeadIds = new Set();
 let filterState = {
   status: 'all',
   search: '',
@@ -342,6 +349,7 @@ function renderLeads(leads) {
   renderStats(allLeads.length ? allLeads : leads);
   leadRows.innerHTML = leads.map((lead, idx) => `
     <tr>
+      <td><input type="checkbox" class="row-check lead-check" data-id="${lead.id}" ${selectedLeadIds.has(String(lead.id)) ? "checked" : ""}></td>
       <td>#${idx + 1}</td>
       <td class="client-cell">
         <div><strong>${lead.name}</strong></div>
@@ -363,10 +371,16 @@ function renderLeads(leads) {
           <a class="icon-link" href="https://wa.me/919994229860?text=${encodeURIComponent('Lead: ' + lead.name + ' (' + lead.email + ') - ' + lead.message)}" target="_blank" rel="noopener noreferrer" title="WhatsApp" aria-label="WhatsApp">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.52 3.48A11.86 11.86 0 0 0 12.06 0C5.56 0 .25 5.3.25 11.8c0 2.08.54 4.1 1.57 5.9L0 24l6.47-1.69a11.8 11.8 0 0 0 5.6 1.43h.01c6.5 0 11.8-5.3 11.8-11.8 0-3.15-1.23-6.1-3.36-8.46zm-8.46 18.25h-.01a9.84 9.84 0 0 1-5.02-1.38l-.36-.21-3.84 1 1.03-3.74-.24-.38a9.81 9.81 0 0 1-1.5-5.22c0-5.42 4.4-9.82 9.83-9.82 2.63 0 5.1 1.03 6.95 2.88a9.77 9.77 0 0 1 2.87 6.94c0 5.42-4.41 9.83-9.82 9.83zm5.39-7.37c-.3-.15-1.78-.88-2.06-.98-.28-.1-.48-.15-.68.15-.2.3-.78.98-.95 1.18-.18.2-.35.23-.66.08-.3-.15-1.27-.47-2.43-1.5-.9-.8-1.5-1.78-1.68-2.08-.18-.3-.02-.46.13-.61.14-.14.3-.35.45-.53.15-.18.2-.3.3-.5.1-.2.05-.38-.03-.53-.08-.15-.68-1.63-.93-2.23-.24-.58-.49-.5-.68-.51h-.58c-.2 0-.53.08-.8.38-.28.3-1.06 1.03-1.06 2.5 0 1.48 1.08 2.9 1.23 3.1.15.2 2.12 3.24 5.15 4.55.72.31 1.29.5 1.73.64.73.23 1.4.2 1.92.12.59-.09 1.78-.73 2.03-1.44.25-.7.25-1.3.18-1.43-.07-.13-.27-.2-.57-.35z"/></svg>
           </a>
+          <a class="icon-link delete-link" href="#" data-delete-id="${lead.id}" title="Delete lead" aria-label="Delete lead">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l1 2h4v2H4V5h4l1-2zm-2 6h2v9H7V9zm4 0h2v9h-2V9zm4 0h2v9h-2V9zM6 21h12a1 1 0 0 0 1-1V8H5v12a1 1 0 0 0 1 1z"/></svg>
+          </a>
         </div>
       </td>
     </tr>
-  `).join('') || '<tr><td colspan="6" class="muted">No leads match current filters.</td></tr>';
+  `).join('') || '<tr><td colspan="7" class="muted">No leads match current filters.</td></tr>';
+  const visibleSelected = leads.length ? leads.every((lead) => selectedLeadIds.has(String(lead.id))) : false;
+  selectAllRows.checked = visibleSelected;
+  deleteSelectedBtn.disabled = selectedLeadIds.size === 0;
 }
 
 async function loadLeads() {
@@ -457,7 +471,7 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
 });
 filterExportBtn.addEventListener('click', () => {
   const qs = filterQueryString();
-  window.location.href = `/api/admin/leads/export.csv${qs ? `?${qs}` : ''}`;
+  window.location.href = `/api/admin/leads/export.xlsx${qs ? `?${qs}` : ''}`;
 });
 
 [fromDate, toDate].forEach((dateInput) => {
@@ -499,6 +513,14 @@ toDate.addEventListener('change', (e) => {
 });
 
 leadRows.addEventListener('change', async (e) => {
+  const check = e.target.closest('.lead-check');
+  if (check) {
+    const id = String(check.dataset.id);
+    if (check.checked) selectedLeadIds.add(id);
+    else selectedLeadIds.delete(id);
+    deleteSelectedBtn.disabled = selectedLeadIds.size === 0;
+    return;
+  }
   const select = e.target.closest('.status-select');
   if (!select) return;
   const id = select.dataset.id;
@@ -512,6 +534,49 @@ leadRows.addEventListener('change', async (e) => {
     applyAndRender();
   } catch (err) {
     alert(err.message || 'Failed to update status');
+  }
+});
+
+selectAllRows.addEventListener('change', (e) => {
+  const checks = leadRows.querySelectorAll('.lead-check');
+  checks.forEach((check) => {
+    check.checked = e.target.checked;
+    const id = String(check.dataset.id);
+    if (e.target.checked) selectedLeadIds.add(id);
+    else selectedLeadIds.delete(id);
+  });
+  deleteSelectedBtn.disabled = selectedLeadIds.size === 0;
+});
+
+leadRows.addEventListener('click', async (e) => {
+  const deleteLink = e.target.closest('[data-delete-id]');
+  if (!deleteLink) return;
+  e.preventDefault();
+  const id = String(deleteLink.dataset.deleteId);
+  const ok = confirm('Delete this lead?');
+  if (!ok) return;
+  try {
+    await api(`/api/admin/leads/${id}`, { method: 'DELETE' });
+    selectedLeadIds.delete(id);
+    allLeads = allLeads.filter((lead) => String(lead.id) !== id);
+    applyAndRender();
+  } catch (err) {
+    alert(err.message || 'Failed to delete lead');
+  }
+});
+
+deleteSelectedBtn.addEventListener('click', async () => {
+  if (selectedLeadIds.size === 0) return;
+  const ok = confirm(`Delete ${selectedLeadIds.size} selected lead(s)?`);
+  if (!ok) return;
+  const ids = [...selectedLeadIds];
+  try {
+    await Promise.all(ids.map((id) => api(`/api/admin/leads/${id}`, { method: 'DELETE' })));
+    ids.forEach((id) => selectedLeadIds.delete(id));
+    allLeads = allLeads.filter((lead) => !ids.includes(String(lead.id)));
+    applyAndRender();
+  } catch (err) {
+    alert(err.message || 'Failed to delete selected leads');
   }
 });
 

@@ -6,6 +6,7 @@ const path = require("path");
 const fs = require("fs/promises");
 const session = require("express-session");
 const nodemailer = require("nodemailer");
+const XLSX = require("xlsx");
 
 const app = express();
 
@@ -56,27 +57,6 @@ async function writeLeads(leads) {
   await fs.writeFile(LEADS_FILE, JSON.stringify(leads, null, 2), "utf-8");
 }
 
-function toCsv(leads) {
-  const headers = [
-    "id",
-    "name",
-    "email",
-    "phone",
-    "service",
-    "message",
-    "status",
-    "receivedAt",
-  ];
-  const escape = (value) =>
-    `"${String(value ?? "")
-      .replace(/"/g, '""')
-      .replace(/\r?\n/g, " ")}"`;
-  const rows = leads.map((lead) =>
-    headers.map((header) => escape(lead[header])).join(",")
-  );
-  return [headers.join(","), ...rows].join("\n");
-}
-
 function normalizeLead(lead) {
   return {
     ...lead,
@@ -111,7 +91,7 @@ function filterLeads(leads, query) {
   });
 }
 
-function buildReportFileName(query) {
+function buildReportBaseName(query) {
   const sanitizeDate = (value) => {
     const d = new Date(String(value || ""));
     if (Number.isNaN(d.getTime())) return null;
@@ -122,12 +102,12 @@ function buildReportFileName(query) {
   const to = sanitizeDate(query.to);
 
   if (from && to) {
-    if (from === to) return `timenov-report-${from}.csv`;
-    return `timenov-report-${from}-to-${to}.csv`;
+    if (from === to) return `timenov-report-${from}`;
+    return `timenov-report-${from}-to-${to}`;
   }
-  if (from) return `timenov-report-from-${from}.csv`;
-  if (to) return `timenov-report-until-${to}.csv`;
-  return `timenov-report-${new Date().toISOString().slice(0, 10)}.csv`;
+  if (from) return `timenov-report-from-${from}`;
+  if (to) return `timenov-report-until-${to}`;
+  return `timenov-report-${new Date().toISOString().slice(0, 10)}`;
 }
 
 function requireAdmin(req, res, next) {
@@ -309,14 +289,51 @@ app.patch("/api/admin/leads/:id/status", requireAdmin, async (req, res) => {
   return res.json({ ok: true, lead: normalizeLead(leads[index]) });
 });
 
-app.get("/api/admin/leads/export.csv", requireAdmin, async (req, res) => {
+app.delete("/api/admin/leads/:id", requireAdmin, async (req, res) => {
+  const leads = await readLeads();
+  const index = leads.findIndex((lead) => String(lead.id) === String(req.params.id));
+  if (index === -1) {
+    return res.status(404).json({ ok: false, message: "Lead not found" });
+  }
+  const [deletedLead] = leads.splice(index, 1);
+  await writeLeads(leads);
+  return res.json({ ok: true, lead: normalizeLead(deletedLead) });
+});
+
+app.get("/api/admin/leads/export.xlsx", requireAdmin, async (req, res) => {
   const leads = (await readLeads()).map(normalizeLead);
   const filtered = filterLeads(leads, req.query);
-  const csv = toCsv(filtered);
-  const fileName = buildReportFileName(req.query);
-  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  const rows = filtered.map((lead) => ({
+    ID: String(lead.id ?? ""),
+    NAME: lead.name ?? "",
+    EMAIL: lead.email ?? "",
+    PHONE: String(lead.phone ?? ""),
+    SERVICE: lead.service ?? "",
+    MESSAGE: lead.message ?? "",
+    STATUS: lead.status ?? "new",
+    RECEIVEDAT: lead.receivedAt ?? "",
+  }));
+  const sheet = XLSX.utils.json_to_sheet(rows, { skipHeader: false });
+  sheet["!cols"] = [
+    { wch: 18 },
+    { wch: 22 },
+    { wch: 28 },
+    { wch: 16 },
+    { wch: 22 },
+    { wch: 42 },
+    { wch: 12 },
+    { wch: 26 },
+  ];
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, sheet, "LEADS");
+  const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+  const fileName = `${buildReportBaseName(req.query)}.xlsx`;
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  );
   res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
-  res.status(200).send(csv);
+  res.status(200).send(buffer);
 });
 
 app.use((req, res) => {
