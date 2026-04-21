@@ -1,0 +1,30 @@
+[
+  {
+    "id": "1776771072335",
+    "name": "aaswath",
+    "email": "aswath5783@gmail.com",
+    "phone": "9994229860",
+    "service": "software-development",
+    "message": "i want some deatieals",
+    "status": "new",
+    "receivedAt": "2026-04-21T11:31:12.335Z"
+  },
+  {
+    "id": "1776771001690",
+    "name": "Santhiya Bava",
+    "email": "sprizon1207@gmail.com",
+    "phone": "09994229860",
+    "service": "app-development",
+    "message": "Hi, I need a business website with contact form.",
+    "status": "new",
+    "receivedAt": "2026-04-21T11:30:01.693Z"
+  },
+  {
+    "id": "1776759848676",
+    "name": "Test User",
+    "email": "test@example.com",
+    "message": "Hello this is a test message for admin panel",
+    "receivedAt": "2026-04-21T08:24:08.676Z",
+    "status": "new"
+  }
+]

@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TIMENOV Admin Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07070f;--text:#f4f4fa;--text2:#9b9bb9;--card:rgba(20,20,34,.55);
+  --border:rgba(255,255,255,.14);--accent:#6d65ff;--accent2:#928cff;
+  --login-shell:#070512;--login-input-text:#ffffff;--login-placeholder:rgba(255,255,255,.75);
+  --login-divider:rgba(146,140,255,.2);--login-row-border:rgba(255,255,255,.45);
+  --login-card-border:rgba(146,140,255,.38);--login-card-inset:rgba(146,140,255,.28);
+}
+[data-theme="light"]{
+  --bg:#f4f5fb;--text:#17172a;--text2:#67678a;--card:rgba(255,255,255,.75);
+  --border:rgba(12,13,28,.14);--accent:#5f55ec;--accent2:#7b72ff;
+  --login-shell:#ffffff;--login-input-text:#17172a;--login-placeholder:rgba(23,23,42,.55);
+  --login-divider:rgba(95,85,236,.25);--login-row-border:rgba(23,23,42,.28);
+  --login-card-border:rgba(95,85,236,.22);--login-card-inset:rgba(95,85,236,.16);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;
+}
+body::before,body::after{
+  content:'';position:fixed;border-radius:50%;pointer-events:none;z-index:-1;filter:blur(8px);
+}
+body::before{width:460px;height:460px;right:-120px;top:-80px;background:radial-gradient(circle,rgba(109,101,255,.38),transparent 70%);animation:float1 9s ease-in-out infinite}
+body::after{width:380px;height:380px;left:-110px;bottom:-120px;background:radial-gradient(circle,rgba(146,140,255,.28),transparent 70%);animation:float2 11s ease-in-out infinite}
+.page{max-width:1120px;margin:0 auto;padding:1.4rem 1.2rem 2.8rem}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem}
+.brand{font-weight:800;letter-spacing:.08em}
+.actions{display:flex;gap:.55rem;align-items:center}
+.btn{
+  border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--text);padding:.62rem 1rem;border-radius:10px;cursor:pointer;
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,opacity .2s ease
+}
+.btn:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,.2)}
+.btn:disabled{opacity:.75;cursor:not-allowed}
+.btn.primary{background:linear-gradient(120deg,var(--accent),var(--accent2));border-color:transparent;box-shadow:0 12px 26px rgba(109,101,255,.34)}
+.icon-btn{width:38px;height:38px;padding:0;border-radius:10px;font-size:1rem}
+
+.hidden{display:none !important}
+.login-shell{min-height:78vh;display:flex;align-items:center;justify-content:center;transition:filter .45s ease}
+.login-shell.is-loading{filter:blur(2px) brightness(1.05)}
+.login-card{
+  width:100%;max-width:900px;border-radius:12px;background:var(--login-shell);border:1px solid var(--login-card-border);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  box-shadow:0 0 0 1px var(--login-card-inset) inset,0 0 34px rgba(109,101,255,.25),0 18px 50px rgba(0,0,0,.25);
+  transition:transform .45s ease,opacity .45s ease,box-shadow .45s ease;
+  overflow:hidden
+}
+.login-card:hover{box-shadow:0 34px 96px rgba(0,0,0,.5),0 16px 48px rgba(109,101,255,.35)}
+.login-card.scaled{transform:scale(.95)}
+.login-card.leaving{opacity:0;transform:translateY(-28px) scale(.96)}
+.login-card.shake{animation:shake .32s linear}
+.login-layout{display:grid;grid-template-columns:1fr 1fr;min-height:420px}
+.login-brand{
+  position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 35% 35%,rgba(109,101,255,.22),transparent 55%),var(--login-shell);
+  border-right:1px solid var(--login-divider);padding:1.8rem;
+}
+.brand-orb{
+  width:180px;height:180px;border-radius:50%;position:relative;
+  background:radial-gradient(circle at 30% 30%,#9d97ff 0%,#6f67ff 40%,#2f2a8a 100%);
+  box-shadow:0 0 45px rgba(109,101,255,.55),0 0 120px rgba(109,101,255,.25);
+  animation:orbPulse 3s ease-in-out infinite;
+}
+.brand-orb::before,.brand-orb::after{
+  content:'';position:absolute;border-radius:50%;inset:-14px;border:1px solid rgba(146,140,255,.35);animation:orbSpin 8s linear infinite;
+}
+.brand-orb::after{inset:-28px;border-style:dashed;animation-duration:12s;animation-direction:reverse;opacity:.55}
+.brand-core{
+  position:absolute;inset:18%;border-radius:50%;border:1px solid rgba(255,255,255,.4);
+  display:flex;align-items:center;justify-content:center;font-size:1.45rem;font-weight:800;letter-spacing:.18em;color:#fff;
+  background:rgba(7,5,18,.45);backdrop-filter:blur(4px)
+}
+.brand-spark{position:absolute;width:8px;height:8px;border-radius:50%;background:#c8c4ff;box-shadow:0 0 14px #c8c4ff}
+.spark1{top:14%;left:22%;animation:float2 4s ease-in-out infinite}
+.spark2{top:64%;right:18%;animation:float1 5s ease-in-out infinite}
+.spark3{bottom:14%;left:34%;animation:float2 6s ease-in-out infinite}
+.brand-text{margin-top:1.2rem;text-align:center}
+.brand-text h3{font-size:1.4rem;letter-spacing:.08em;margin-bottom:.35rem}
+.brand-text p{color:var(--text2);font-size:.88rem}
+
+.login-left{padding:1.8rem 2.2rem;display:flex;flex-direction:column;justify-content:center}
+.login-title{font-size:2rem;font-weight:800;margin-bottom:1.25rem}
+.login-sub{display:none}
+.form{display:grid;gap:.8rem;max-width:320px;width:100%}
+.row{display:flex;align-items:center;gap:.55rem;border:none;border-bottom:1px solid var(--login-row-border);border-radius:0;padding:.35rem 0;background:transparent;transition:border-color .2s ease}
+.row:focus-within{border-bottom-color:rgba(146,140,255,.95);box-shadow:none}
+.row span{opacity:.8;font-size:.82rem;min-width:14px;text-align:center}
+.row input{border:none;outline:none;background:transparent;color:var(--login-input-text);width:100%;font-size:.92rem;padding:.2rem 0;line-height:1.2}
+.row input::placeholder{color:var(--login-placeholder)}
+.row input:-webkit-autofill,
+.row input:-webkit-autofill:hover,
+.row input:-webkit-autofill:focus,
+.row input:-webkit-autofill:active{
+  -webkit-text-fill-color:var(--login-input-text) !important;
+  -webkit-box-shadow:0 0 0 1000px transparent inset !important;
+  box-shadow:0 0 0 1000px transparent inset !important;
+  transition:background-color 9999s ease-in-out 0s;
+}
+.row input:-moz-autofill{
+  box-shadow:0 0 0 1000px transparent inset !important;
+}
+.status{min-height:1.1rem;color:#ff6c88;font-size:.86rem}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;display:inline-block;animation:spin .8s linear infinite;vertical-align:middle;margin-right:.45rem}
+.form .btn.primary{margin-top:.7rem;border-radius:999px;padding:.6rem 1rem;width:100%}
+
+.dashboard{opacity:0;transform:translateY(22px);transition:opacity .55s ease,transform .55s ease}
+.dashboard.show{opacity:1;transform:none}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.85rem;margin-bottom:.95rem}
+.stat,.table-wrap{
+  background:var(--card);border:1px solid var(--border);border-radius:16px;padding:.95rem;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)
+}
+.stat{opacity:0;transform:translateY(14px)}
+.stat.in{animation:reveal .6s ease forwards}
+.stat .v.new{color:#52a4ff}
+.stat .v.progress{color:#f9bf55}
+.stat .v.completed{color:#67d98c}
+.k{font-size:.75rem;color:var(--text2)}
+.v{font-size:1.3rem;font-weight:800;margin-top:.3rem}
+.toolbar{display:grid;grid-template-columns:auto 1fr auto auto auto;gap:.65rem;align-items:center;margin-bottom:.8rem}
+.chips{display:flex;gap:.45rem;flex-wrap:wrap}
+.chip{border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text2);padding:.35rem .65rem;border-radius:999px;font-size:.76rem;cursor:pointer}
+.chip.active{background:rgba(109,101,255,.18);border-color:rgba(109,101,255,.45);color:var(--text)}
+.ctrl{border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--text);padding:.5rem .65rem;border-radius:9px;font-size:.82rem}
+.ctrl.date{min-width:132px;cursor:pointer}
+.ctrl.date::-webkit-calendar-picker-indicator{cursor:pointer;filter:invert(.65)}
+.table-wrap{opacity:0;transform:translateY(14px)}
+.table-wrap.in{animation:reveal .6s ease forwards}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:.8rem .65rem;border-bottom:1px solid var(--border);font-size:.88rem;vertical-align:top}
+th{font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--text2)}
+.muted{color:var(--text2);font-size:.84rem}
+.status-badge{display:inline-flex;align-items:center;gap:.35rem;padding:.2rem .55rem;border-radius:999px;font-size:.72rem;font-weight:600;border:1px solid transparent}
+.status-badge.new{background:rgba(82,164,255,.12);border-color:rgba(82,164,255,.35);color:#52a4ff}
+.status-badge.in_progress{background:rgba(249,191,85,.12);border-color:rgba(249,191,85,.35);color:#f9bf55}
+.status-badge.completed{background:rgba(103,217,140,.12);border-color:rgba(103,217,140,.35);color:#67d98c}
+.client-cell{min-width:210px}
+.req-cell{min-width:270px}
+.action-group{display:flex;gap:.35rem;align-items:center}
+.status-select{
+  min-width:108px;
+  color:var(--text);
+  background:rgba(255,255,255,.03);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:.32rem .4rem;
+  font-size:.76rem;
+  appearance:none;
+  -webkit-appearance:none;
+  color-scheme:dark;
+}
+.status-select option{
+  background:#121223;
+  color:#f4f4fa;
+}
+.icon-link{
+  width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;
+  text-decoration:none;color:#d9d6ff;transition:transform .22s ease,filter .22s ease,color .22s ease;
+}
+.icon-link svg{width:19px;height:19px;fill:currentColor;filter:drop-shadow(0 3px 8px rgba(109,101,255,.35))}
+.icon-link:hover{color:#fff;transform:translateY(-3px) scale(1.15);filter:drop-shadow(0 8px 15px rgba(109,101,255,.45))}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-4px)}}
+@keyframes reveal{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes float1{0%,100%{transform:translateY(0)}50%{transform:translateY(18px)}}
+@keyframes float2{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
+@keyframes orbPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes orbSpin{to{transform:rotate(360deg)}}
+@media(max-width:900px){
+  .grid{grid-template-columns:1fr}.topbar{flex-wrap:wrap;gap:.7rem}
+  .login-layout{grid-template-columns:1fr}
+  .login-brand{min-height:220px}
+  .toolbar{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <div class="brand">TIMENOV ADMIN</div>
+      <div class="actions">
+        <button class="btn icon-btn" id="themeBtn" aria-label="Toggle theme">☀</button>
+        <div id="dashActions" class="hidden" style="display:flex;gap:.55rem">
+          <button class="btn" id="logoutBtn">Logout</button>
+        </div>
+      </div>
+    </div>
+
+    <section class="login-shell" id="loginShell">
+      <div class="login-card" id="loginCard">
+        <div class="login-layout">
+          <div class="login-brand">
+            <div class="brand-orb">
+              <div class="brand-core">TNV</div>
+              <span class="brand-spark spark1"></span>
+              <span class="brand-spark spark2"></span>
+              <span class="brand-spark spark3"></span>
+            </div>
+            <div class="brand-text">
+              <h3>TIMENOV IDENTITY</h3>
+              <p>Secure admin control with animated system core.</p>
+            </div>
+          </div>
+          <div class="login-left">
+            <h2 class="login-title">Login</h2>
+            <form class="form" id="loginForm">
+              <label class="row"><span>👤</span><input id="username" placeholder="Username" required></label>
+              <label class="row"><span>🔒</span><input id="password" type="password" placeholder="Password" required></label>
+              <button class="btn primary" id="loginBtn" type="submit">Login</button>
+            </form>
+            <p class="status" id="loginStatus"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dashboard hidden" id="dashboard">
+      <div class="grid">
+        <div class="stat"><div class="k">Total Quotes</div><div class="v" id="totalLeads">0</div></div>
+        <div class="stat"><div class="k">New</div><div class="v new" id="countNew">0</div></div>
+        <div class="stat"><div class="k">In Progress</div><div class="v progress" id="countProgress">0</div></div>
+        <div class="stat"><div class="k">Completed</div><div class="v completed" id="countCompleted">0</div></div>
+      </div>
+      <div class="toolbar">
+        <div class="chips" id="statusChips">
+          <button class="chip active" data-status="all">All</button>
+          <button class="chip" data-status="new">New</button>
+          <button class="chip" data-status="in_progress">In Progress</button>
+          <button class="chip" data-status="completed">Completed</button>
+        </div>
+        <input class="ctrl" type="search" id="searchInput" placeholder="Search name, email, requirement...">
+        <input class="ctrl date" type="date" id="fromDate" onkeydown="return false" onpaste="return false">
+        <input class="ctrl date" type="date" id="toDate" onkeydown="return false" onpaste="return false">
+        <button class="btn" id="filterExportBtn">Export Excel</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Client</th><th>Requirement</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="leadRows"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+<script>
+const html = document.documentElement;
+const themeBtn = document.getElementById('themeBtn');
+const dashActions = document.getElementById('dashActions');
+const loginShell = document.getElementById('loginShell');
+const loginCard = document.getElementById('loginCard');
+const loginForm = document.getElementById('loginForm');
+const loginBtn = document.getElementById('loginBtn');
+const loginStatus = document.getElementById('loginStatus');
+const dashboard = document.getElementById('dashboard');
+const totalLeads = document.getElementById('totalLeads');
+const countNew = document.getElementById('countNew');
+const countProgress = document.getElementById('countProgress');
+const countCompleted = document.getElementById('countCompleted');
+const leadRows = document.getElementById('leadRows');
+const searchInput = document.getElementById('searchInput');
+const fromDate = document.getElementById('fromDate');
+const toDate = document.getElementById('toDate');
+const statusChips = document.getElementById('statusChips');
+const filterExportBtn = document.getElementById('filterExportBtn');
+let loginBusy = false;
+let allLeads = [];
+let filterState = {
+  status: 'all',
+  search: '',
+  from: '',
+  to: ''
+};
+
+function applyTheme(theme) {
+  html.dataset.theme = theme;
+  themeBtn.textContent = theme === 'dark' ? '☀' : '☾';
+  localStorage.setItem('timenov-admin-theme', theme);
+}
+applyTheme(localStorage.getItem('timenov-admin-theme') || 'dark');
+themeBtn.addEventListener('click', () => applyTheme(html.dataset.theme === 'dark' ? 'light' : 'dark'));
+
+async function api(path, options = {}) {
+  const res = await fetch(path, {
+    ...options,
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || 'Request failed');
+  return data;
+}
+
+function statusLabel(status) {
+  if (status === 'in_progress') return 'In Progress';
+  if (status === 'completed') return 'Completed';
+  return 'New';
+}
+
+function formatDate(value) {
+  return new Date(value).toLocaleString();
+}
+
+function applyFilters(leads) {
+  return leads.filter((lead) => {
+    const statusOk = filterState.status === 'all' || lead.status === filterState.status;
+    const search = filterState.search.trim().toLowerCase();
+    const hay = `${lead.name} ${lead.email} ${lead.message}`.toLowerCase();
+    const searchOk = !search || hay.includes(search);
+    const date = new Date(lead.receivedAt);
+
+    let fromOk = true;
+    let toOk = true;
+    if (filterState.from) {
+      const from = new Date(filterState.from);
+      fromOk = date >= from;
+    }
+    if (filterState.to) {
+      const to = new Date(filterState.to);
+      to.setHours(23, 59, 59, 999);
+      toOk = date <= to;
+    }
+    return statusOk && searchOk && fromOk && toOk;
+  });
+}
+
+function renderStats(leads) {
+  totalLeads.textContent = String(leads.length);
+  countNew.textContent = String(leads.filter((lead) => lead.status === 'new').length);
+  countProgress.textContent = String(leads.filter((lead) => lead.status === 'in_progress').length);
+  countCompleted.textContent = String(leads.filter((lead) => lead.status === 'completed').length);
+}
+
+function renderLeads(leads) {
+  renderStats(allLeads.length ? allLeads : leads);
+  leadRows.innerHTML = leads.map((lead, idx) => `
+    <tr>
+      <td>#${idx + 1}</td>
+      <td class="client-cell">
+        <div><strong>${lead.name}</strong></div>
+        <div class="muted">${lead.email}</div>
+      </td>
+      <td class="req-cell">${lead.message}</td>
+      <td><span class="status-badge ${lead.status}">${statusLabel(lead.status)}</span></td>
+      <td>${formatDate(lead.receivedAt)}</td>
+      <td>
+        <div class="action-group">
+          <select class="status-select" data-id="${lead.id}">
+            <option value="new" ${lead.status === 'new' ? 'selected' : ''}>New</option>
+            <option value="in_progress" ${lead.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+            <option value="completed" ${lead.status === 'completed' ? 'selected' : ''}>Completed</option>
+          </select>
+          <a class="icon-link" href="mailto:${lead.email}" title="Send Email" aria-label="Send Email">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm9 8.3L4.4 7h15.2L12 13.3zm0 2L4 8.8V17h16V8.8L12 15.3z"/></svg>
+          </a>
+          <a class="icon-link" href="https://wa.me/919994229860?text=${encodeURIComponent('Lead: ' + lead.name + ' (' + lead.email + ') - ' + lead.message)}" target="_blank" rel="noopener noreferrer" title="WhatsApp" aria-label="WhatsApp">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.52 3.48A11.86 11.86 0 0 0 12.06 0C5.56 0 .25 5.3.25 11.8c0 2.08.54 4.1 1.57 5.9L0 24l6.47-1.69a11.8 11.8 0 0 0 5.6 1.43h.01c6.5 0 11.8-5.3 11.8-11.8 0-3.15-1.23-6.1-3.36-8.46zm-8.46 18.25h-.01a9.84 9.84 0 0 1-5.02-1.38l-.36-.21-3.84 1 1.03-3.74-.24-.38a9.81 9.81 0 0 1-1.5-5.22c0-5.42 4.4-9.82 9.83-9.82 2.63 0 5.1 1.03 6.95 2.88a9.77 9.77 0 0 1 2.87 6.94c0 5.42-4.41 9.83-9.82 9.83zm5.39-7.37c-.3-.15-1.78-.88-2.06-.98-.28-.1-.48-.15-.68.15-.2.3-.78.98-.95 1.18-.18.2-.35.23-.66.08-.3-.15-1.27-.47-2.43-1.5-.9-.8-1.5-1.78-1.68-2.08-.18-.3-.02-.46.13-.61.14-.14.3-.35.45-.53.15-.18.2-.3.3-.5.1-.2.05-.38-.03-.53-.08-.15-.68-1.63-.93-2.23-.24-.58-.49-.5-.68-.51h-.58c-.2 0-.53.08-.8.38-.28.3-1.06 1.03-1.06 2.5 0 1.48 1.08 2.9 1.23 3.1.15.2 2.12 3.24 5.15 4.55.72.31 1.29.5 1.73.64.73.23 1.4.2 1.92.12.59-.09 1.78-.73 2.03-1.44.25-.7.25-1.3.18-1.43-.07-.13-.27-.2-.57-.35z"/></svg>
+          </a>
+        </div>
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="6" class="muted">No leads match current filters.</td></tr>';
+}
+
+async function loadLeads() {
+  const data = await api('/api/admin/leads');
+  allLeads = (data.leads || []).map((lead) => ({
+    ...lead,
+    status: lead.status || 'new'
+  }));
+  renderLeads(applyFilters(allLeads));
+}
+
+function applyAndRender() {
+  renderLeads(applyFilters(allLeads));
+}
+
+function filterQueryString() {
+  const params = new URLSearchParams();
+  if (filterState.status && filterState.status !== 'all') params.set('status', filterState.status);
+  if (filterState.search) params.set('search', filterState.search);
+  if (filterState.from) params.set('from', filterState.from);
+  if (filterState.to) params.set('to', filterState.to);
+  return params.toString();
+}
+
+function showDashboard() {
+  loginShell.classList.add('hidden');
+  dashboard.classList.remove('hidden');
+  dashboard.classList.add('show');
+  dashActions.classList.remove('hidden');
+  [...dashboard.querySelectorAll('.stat'), dashboard.querySelector('.table-wrap')].forEach((el, i) => {
+    el.classList.remove('in');
+    el.style.animationDelay = `${i * 120}ms`;
+    requestAnimationFrame(() => el.classList.add('in'));
+  });
+}
+
+function resetLoginUI() {
+  loginBusy = false;
+  loginShell.classList.remove('is-loading');
+  loginCard.classList.remove('scaled', 'leaving');
+  loginBtn.disabled = false;
+  loginBtn.textContent = 'Login';
+}
+
+loginForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (loginBusy) return;
+  loginBusy = true;
+  loginStatus.textContent = '';
+  loginBtn.disabled = true;
+  loginBtn.innerHTML = '<span class="spinner"></span>Signing in...';
+  loginCard.classList.add('scaled');
+  loginShell.classList.add('is-loading');
+
+  try {
+    await Promise.all([
+      api('/api/admin/login', {
+        method: 'POST',
+        body: JSON.stringify({
+          username: document.getElementById('username').value.trim(),
+          password: document.getElementById('password').value
+        })
+      }),
+      new Promise((r) => setTimeout(r, 1200))
+    ]);
+    loginCard.classList.add('leaving');
+    await new Promise((r) => setTimeout(r, 460));
+    showDashboard();
+    await loadLeads();
+    resetLoginUI();
+  } catch (err) {
+    loginStatus.textContent = err.message;
+    loginCard.classList.remove('scaled');
+    loginCard.classList.remove('shake'); void loginCard.offsetWidth; loginCard.classList.add('shake');
+    resetLoginUI();
+  }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await api('/api/admin/logout', { method: 'POST' });
+  dashboard.classList.add('hidden');
+  dashboard.classList.remove('show');
+  dashActions.classList.add('hidden');
+  loginShell.classList.remove('hidden');
+  loginStatus.textContent = '';
+  document.getElementById('password').value = '';
+  resetLoginUI();
+});
+filterExportBtn.addEventListener('click', () => {
+  const qs = filterQueryString();
+  window.location.href = `/api/admin/leads/export.csv${qs ? `?${qs}` : ''}`;
+});
+
+[fromDate, toDate].forEach((dateInput) => {
+  dateInput.setAttribute('inputmode', 'none');
+  dateInput.addEventListener('focus', () => {
+    if (typeof dateInput.showPicker === 'function') dateInput.showPicker();
+  });
+  dateInput.addEventListener('click', () => {
+    if (typeof dateInput.showPicker === 'function') dateInput.showPicker();
+  });
+  dateInput.addEventListener('keydown', (e) => {
+    e.preventDefault();
+  });
+  dateInput.addEventListener('beforeinput', (e) => {
+    e.preventDefault();
+  });
+});
+
+statusChips.addEventListener('click', (e) => {
+  const btn = e.target.closest('.chip');
+  if (!btn) return;
+  filterState.status = btn.dataset.status;
+  [...statusChips.querySelectorAll('.chip')].forEach((chip) => chip.classList.remove('active'));
+  btn.classList.add('active');
+  applyAndRender();
+});
+
+searchInput.addEventListener('input', (e) => {
+  filterState.search = e.target.value;
+  applyAndRender();
+});
+fromDate.addEventListener('change', (e) => {
+  filterState.from = e.target.value;
+  applyAndRender();
+});
+toDate.addEventListener('change', (e) => {
+  filterState.to = e.target.value;
+  applyAndRender();
+});
+
+leadRows.addEventListener('change', async (e) => {
+  const select = e.target.closest('.status-select');
+  if (!select) return;
+  const id = select.dataset.id;
+  const status = select.value;
+  try {
+    await api(`/api/admin/leads/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status })
+    });
+    allLeads = allLeads.map((lead) => (lead.id === id ? { ...lead, status } : lead));
+    applyAndRender();
+  } catch (err) {
+    alert(err.message || 'Failed to update status');
+  }
+});
+
+(async () => {
+  try {
+    const me = await api('/api/admin/me');
+    if (me.isAdmin) {
+      showDashboard();
+      await loadLeads();
+    }
+  } catch {}
+})();
+</script>
+</body>
+</html>
